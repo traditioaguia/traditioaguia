@@ -530,7 +530,108 @@ function approve(){
  setTimeout(renderAchievements,100);
 }
 function renderAll(){try{renderMission();renderEagleMessage();renderAnnual();renderCatechism();renderAcademy();renderGradesTable();renderAcademyStats();renderAchievements();renderJourney();weekMoney.textContent=money(weekMoneyTotal());xp.textContent=Number(state.xp||0)+' XP';if(typeof renderBackupStatus==='function')renderBackupStatus();}catch(err){console.error('Erro renderAll V35.2.5:',err);alert('Erro interno: '+err.message);}}
-async function runOCR(file){ocrStatus.textContent='Processando arquivo...';let url=URL.createObjectURL(file);reportPreview.innerHTML=file.type.includes('pdf')?`<iframe src="${url}"></iframe>`:`<img src="${url}" alt="Boletim">`;if(file.type.startsWith('image/') && window.Tesseract){ocrStatus.textContent='Lendo imagem com OCR. Isso pode demorar...';let res=await Tesseract.recognize(file,'por+eng');ocrText.value=res.data.text;state.lastOCR=res.data.text;save();ocrStatus.textContent='OCR concluído. Revise o texto e clique em detectar notas.';return}ocrStatus.textContent='Arquivo carregado. Para OCR automático, prefira imagem nítida do boletim.'}
+function waitForGlobal(name,timeoutMs){return new Promise((resolve,reject)=>{if(window[name])return resolve(window[name]);let waited=0;let iv=setInterval(()=>{waited+=150;if(window[name]){clearInterval(iv);resolve(window[name])}else if(waited>=timeoutMs){clearInterval(iv);reject(new Error('timeout'))}},150)})}
+function waitForTesseract(timeoutMs){return waitForGlobal('Tesseract',timeoutMs)}
+function downscaleImage(file,maxDim){return new Promise((resolve)=>{if(!file.type.startsWith('image/')||file.type.includes('svg')){resolve(file);return}let img=new Image();let objUrl=URL.createObjectURL(file);img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight;URL.revokeObjectURL(objUrl);if(!w||!h||Math.max(w,h)<=maxDim){resolve(file);return}let scale=maxDim/Math.max(w,h);let cw=Math.round(w*scale),ch=Math.round(h*scale);let canvas=document.createElement('canvas');canvas.width=cw;canvas.height=ch;let ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,cw,ch);canvas.toBlob(blob=>{resolve(blob?new File([blob],file.name||'boletim.jpg',{type:'image/jpeg'}):file)},'image/jpeg',0.92)};img.onerror=()=>{URL.revokeObjectURL(objUrl);resolve(file)};img.src=objUrl})}
+async function extractTextFromPdf(file,onProgress){
+ let pdfjsLib=await waitForGlobal('pdfjsLib',15000);
+ if(!pdfjsLib.GlobalWorkerOptions.workerSrc){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'}
+ let buf=await file.arrayBuffer();
+ let pdf=await pdfjsLib.getDocument({data:buf}).promise;
+ let numPages=pdf.numPages;
+ let textParts=[];
+ for(let p=1;p<=numPages;p++){
+  let page=await pdf.getPage(p);
+  let content=await page.getTextContent();
+  textParts.push(content.items.map(it=>it.str).join(' ').trim());
+  if(onProgress)onProgress({stage:'text',page:p,totalPages:numPages});
+ }
+ let combined=textParts.join('\n\n').trim();
+ if(combined.length/numPages>15){return {text:combined,method:'text',numPages}}
+ let Tesseract=await waitForTesseract(15000);
+ let ocrParts=[];
+ for(let p=1;p<=numPages;p++){
+  let page=await pdf.getPage(p);
+  let viewport=page.getViewport({scale:2});
+  let canvas=document.createElement('canvas');
+  canvas.width=viewport.width;canvas.height=viewport.height;
+  let ctx=canvas.getContext('2d');
+  await page.render({canvasContext:ctx,viewport:viewport}).promise;
+  if(onProgress)onProgress({stage:'render',page:p,totalPages:numPages});
+  let res=await Tesseract.recognize(canvas,'por+eng',{logger:info=>{
+   if(onProgress&&info.status==='recognizing text'&&typeof info.progress==='number'){onProgress({stage:'ocr',page:p,totalPages:numPages,progress:info.progress})}
+  }});
+  ocrParts.push((res.data.text||'').trim());
+ }
+ return {text:ocrParts.join('\n\n').trim(),method:'ocr',numPages};
+}
+let ocrPreviewUrl=null;
+async function runOCR(file){
+ if(!file)return;
+ if(ocrPreviewUrl){URL.revokeObjectURL(ocrPreviewUrl);ocrPreviewUrl=null}
+ ocrText.value='';state.lastOCR='';parseResult.innerHTML='';
+ let name=(file.name||'').toLowerCase();
+ let isHeic=name.endsWith('.heic')||name.endsWith('.heif')||file.type==='image/heic'||file.type==='image/heif';
+ let isPdf=file.type.includes('pdf')||name.endsWith('.pdf');
+ let isImage=file.type.startsWith('image/')&&!isHeic;
+ if(isHeic){ocrStatus.textContent='⚠️ Este é um arquivo HEIC (foto do iPhone), que o navegador não consegue abrir nem ler por OCR. No iPhone, vá em Ajustes > Câmera > Formatos e escolha "Mais Compatível" (JPEG), ou converta a foto para JPG/PNG antes de importar.';reportPreview.innerHTML='';return}
+ if(!isImage&&!isPdf){ocrStatus.textContent='⚠️ Formato de arquivo não suportado para OCR automático. Envie uma foto (JPG, PNG) ou um PDF do boletim.';reportPreview.innerHTML='';return}
+ ocrPreviewUrl=URL.createObjectURL(file);
+ reportPreview.innerHTML=isPdf?`<iframe src="${ocrPreviewUrl}"></iframe>`:`<img src="${ocrPreviewUrl}" alt="Boletim">`;
+ if(isPdf){
+  ocrStatus.innerHTML='<div class="ocr-progress"><div class="ocr-progress-bar" style="width:0%"></div></div><span class="ocr-progress-label">Abrindo PDF...</span>';
+  try{
+   let result=await extractTextFromPdf(file,info=>{
+    let bar=ocrStatus.querySelector('.ocr-progress-bar');
+    let lbl=ocrStatus.querySelector('.ocr-progress-label');
+    if(info.stage==='text'){
+     let pct=Math.round((info.page/info.totalPages)*100);
+     if(bar)bar.style.width=pct+'%';
+     if(lbl)lbl.textContent=`Lendo texto do PDF... página ${info.page}/${info.totalPages}`;
+    }else if(info.stage==='render'){
+     if(lbl)lbl.textContent=`PDF parece ser uma imagem escaneada. Preparando página ${info.page}/${info.totalPages} para OCR...`;
+    }else if(info.stage==='ocr'){
+     let overall=Math.round((((info.page-1)+(info.progress||0))/info.totalPages)*100);
+     if(bar)bar.style.width=overall+'%';
+     if(lbl)lbl.textContent=`Lendo por OCR... página ${info.page}/${info.totalPages} (${Math.round((info.progress||0)*100)}%)`;
+    }
+   });
+   if(!result.text){ocrStatus.textContent='⚠️ Não foi possível extrair texto deste PDF. Tente enviar uma foto/print do boletim em JPG ou PNG, ou digite as notas manualmente na tabela abaixo.';return}
+   ocrText.value=result.text;state.lastOCR=result.text;save();
+   let metodoMsg=result.method==='text'?'texto digital extraído diretamente do PDF':'OCR, pois o PDF era uma imagem escaneada';
+   ocrStatus.textContent=`✅ PDF lido com sucesso (${metodoMsg}; ${result.numPages} página${result.numPages>1?'s':''}). Revise o texto abaixo e clique em "Detectar notas e preencher tabela".`;
+  }catch(err){
+   ocrStatus.textContent='⚠️ Não foi possível ler este PDF automaticamente (verifique sua conexão com a internet, se o arquivo não está corrompido, ou recarregue a página). Você também pode enviar uma foto/print do boletim em JPG/PNG, ou digitar as notas manualmente na tabela abaixo.';
+  }
+  return;
+ }
+ ocrStatus.innerHTML='<div class="ocr-progress"><div class="ocr-progress-bar" style="width:0%"></div></div><span class="ocr-progress-label">Preparando leitor de imagem...</span>';
+ let tesseract;
+ try{tesseract=await waitForTesseract(15000)}
+ catch(err){ocrStatus.textContent='⚠️ Não foi possível carregar o leitor de OCR (verifique sua conexão com a internet e recarregue a página). Você ainda pode digitar as notas manualmente na tabela abaixo.';return}
+ let workFile=file;
+ try{workFile=await downscaleImage(file,2000)}catch(err){workFile=file}
+ try{
+  let res=await Tesseract.recognize(workFile,'por+eng',{
+   logger:info=>{
+    if(info.status&&typeof info.progress==='number'){
+     let pct=Math.round(info.progress*100);
+     let label=info.status==='recognizing text'?'Lendo o texto da imagem':'Preparando';
+     let bar=ocrStatus.querySelector('.ocr-progress-bar');
+     let lbl=ocrStatus.querySelector('.ocr-progress-label');
+     if(bar)bar.style.width=pct+'%';
+     if(lbl)lbl.textContent=`${label}... ${pct}%`;
+    }
+   }
+  });
+  let text=(res&&res.data&&res.data.text||'').trim();
+  if(!text){ocrStatus.textContent='⚠️ Não foi possível reconhecer texto nesta imagem. Tente uma foto mais nítida, bem iluminada e sem reflexos, enquadrando só o boletim.';return}
+  ocrText.value=text;state.lastOCR=text;save();
+  ocrStatus.textContent='✅ OCR concluído! Revise o texto abaixo (o reconhecimento pode ter pequenos erros) e clique em "Detectar notas e preencher tabela".';
+ }catch(err){
+  ocrStatus.textContent='⚠️ Ocorreu um erro ao processar a imagem. Tente novamente com uma foto mais nítida, ou digite as notas manualmente na tabela abaixo.';
+ }
+}
 document.addEventListener('change',e=>{if(e.target.matches('#tasks input')){state.checked[e.target.dataset.id]=e.target.checked;state.aiPlan='';save();renderAll()}if(e.target.matches('[data-grade-sub]')){let s=e.target.dataset.gradeSub,i=Number(e.target.dataset.gradeI);state.grades[s][i]=Number(e.target.value||0);save();renderGradesTable();}if(e.target.id==='disciplineSelect'){state.selectedSubject=e.target.value;state.academySession=null;save();renderAcademySession()}if(e.target.id==='reportFile'){let file=e.target.files[0];if(file)runOCR(file)}if(e.target.id==='importGrades'){let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{try{state.grades=JSON.parse(r.result);save();renderGradesTable();alert('Boletim importado.')}catch(e){alert('Arquivo inválido.')}};r.readAsText(file)}});
 document.addEventListener('input',e=>{if(e.target.id==='cateSearch')renderCateSearch()});
 document.addEventListener('click',e=>{if(e.target.matches('[data-tab]'))switchTab(e.target.dataset.tab);if(e.target.id==='goParent')switchTab('parent');if(e.target.id==='approve')approve();if(e.target.id==='parseGrades'){let found=parseGradesFromText(ocrText.value);let count=applyDetectedGrades(found);parseResult.innerHTML=count?`Notas detectadas e aplicadas: ${count}. Revise a tabela.`:'Nenhuma nota detectada automaticamente. Revise o texto ou preencha manualmente.'}if(e.target.id==='resetQuestionHistory'){state.seenQuestions={};state.academySession=null;save();alert('Histórico reiniciado.')}if(e.target.id==='startAcademySession'){startAcademySession();}if(e.target.id==='smartQuestion'){state.selectedSubject=smartPriority();state.academySession=null;save();renderAcademy();}if(e.target.matches('[data-annual]'))describeDate(e.target.dataset.annual);if(e.target.matches('[data-open-date-cate]')){let key=e.target.dataset.openDateCate;let idx=saturdaysOfYear().findIndex(d=>iso(d)===key);state.catePage=idx>=0?idx:cateWeekIndex(new Date(key+'T00:00:00'));save();switchTab('catechism')}if(e.target.matches('[data-open-cate]')){state.catePage=Number(e.target.dataset.openCate);state.aiPlan='';save();switchTab('catechism')}if(e.target.matches('[data-subject]'))showQuestion(e.target.dataset.subject);if(e.target.matches('.answer-session')){answerAcademySession(e.target.dataset.i);}if(e.target.matches('.answer')){let sub=e.target.dataset.sub,q=questionBank[sub][Number(e.target.dataset.qi)],ok=Number(e.target.dataset.i)===q[2];e.target.classList.add(ok?'correct':'wrong');state.xp+=ok?5:0;state.academyStats[sub]=state.academyStats[sub]||{correct:0,total:0};state.academyStats[sub].total++;if(ok)state.academyStats[sub].correct++;let fb=e.target.parentElement.querySelector('.feedback');fb.classList.remove('hidden');fb.textContent=ok?'✅ Correto! +5 XP':'❌ '+q[3];save();renderAcademyStats();}if(e.target.id==='continueCatechism'){state.catePage=cateWeekIndex();save();switchTab('catechism')}if(e.target.id==='prevCate'){state.catePage=Math.max(0,(state.catePage||0)-1);save();renderAll()}if(e.target.id==='nextCate'){state.catePage=Math.min(51,(state.catePage||0)+1);save();renderAll()}if(e.target.id==='favCate'){let i=state.catePage||0;state.cateFavorites=state.cateFavorites.includes(i)?state.cateFavorites.filter(x=>x!==i):[...state.cateFavorites,i];save();renderAll()}if(e.target.id==='markCate'){let i=state.catePage||0,key=iso(saturdaysOfYear()[i]);if(!state.cateDone[key]){state.cateDone[key]=true;state.cateXP+=10;state.xp+=10;save()}renderAll()}if(e.target.id==='journeyNext'){if(state.journeyIndex<journeyPages.length-1){state.journeyIndex++;save();renderJourney()}else switchTab('today')}if(e.target.id==='journeyPrev'){if(state.journeyIndex>0){state.journeyIndex--;save();renderJourney()}}if(e.target.id==='restartJourney'){state.journeyIndex=0;save();renderJourney()}if(e.target.id==='saveGrades'){save();alert('Notas salvas e sincronizadas com o responsável.')}if(e.target.id==='exportGrades'){let blob=new Blob([JSON.stringify(state.grades,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='boletim-projeto-aguia.json';a.click()}if(e.target.id==='export'){let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='projeto-aguia-v35-2-4-progresso.json';a.click()}if(e.target.id==='logout'){localStorage.removeItem('unlockedV23');location.reload()}});
