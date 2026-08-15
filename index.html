@@ -8,6 +8,7 @@
 <title>Traditio Águia — Versão 1.0</title>
 <link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css">
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 </head>
 <body>
 <div id="lock" class="lock"><div class="box"><div class="logo">🦅</div><h1>Traditio Águia — Versão 1.0</h1><p class="latin">Cognoscere, amare et servire Deum.</p><input id="pass" type="password" placeholder="Senha familiar"><button id="enter">Entrar</button><small>Senha: aguia2026</small></div></div>
@@ -116,7 +117,7 @@
 </section>
 
 <section id="grades" class="panel">
-<div class="card"><h2>📄 Boletim com OCR</h2><p class="muted">Importe imagem do boletim para tentativa de OCR. Revise antes de aplicar.</p><input id="reportFile" type="file" accept=".pdf,image/png,image/jpeg,image/jpg,image/*"><div id="ocrStatus" class="details">Aguardando arquivo.</div><div id="reportPreview" class="report-preview"></div></div>
+<div class="card"><h2>📄 Boletim com OCR</h2><p class="muted">Envie uma foto nítida do boletim (JPG/PNG) ou um arquivo PDF. O app tenta ler o texto automaticamente — em PDFs digitais o texto é extraído direto, e em PDFs escaneados (imagem) ou fotos, é usado OCR. Sempre revise o texto antes de aplicar.</p><input id="reportFile" type="file" accept=".pdf,image/png,image/jpeg,image/jpg,image/webp,image/*" capture="environment"><div id="ocrStatus" class="details">Aguardando arquivo.</div><div id="reportPreview" class="report-preview"></div></div>
 <div class="card"><h2>🧾 Texto lido pelo OCR</h2><textarea id="ocrText" placeholder="O texto extraído aparecerá aqui."></textarea><button id="parseGrades">Detectar notas e preencher tabela</button><div id="parseResult" class="details"></div></div>
 <div class="card"><h2>📊 Tabela de Notas por Bimestre</h2><div id="gradesTable"></div><button id="saveGrades">Salvar notas</button><button id="exportGrades" class="ghost">Exportar boletim JSON</button><input id="importGrades" type="file" accept=".json" class="file-input"><label for="importGrades" class="fake-button">Importar boletim JSON</label></div>
 </section>
@@ -344,4 +345,4 @@ traditioaguia@gmail.com
 <button data-tab="catechism">Catecismo</button>
 <button data-tab="more">Mais</button>
 </nav>
-</div><script src="app.js?v=35.2.7-review-expand"></script></body></html>
+</div><script src="app.js?v=35.2.9-pdf-ocr"></script></body></html>
