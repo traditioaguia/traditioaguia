@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Traditio Águia — Versão 1.0</title>
 <link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bilbo+Swash+Caps&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -72,7 +75,7 @@
 
 <section id="catechism" class="panel">
 <div class="card"><h2>✝️ Catecismo Anual</h2><div class="grid"><div><b id="cateProgress">0%</b><small>progresso</small></div><div><b id="cateDone">0/52</b><small>sábados</small></div><div><b id="cateXP">0 XP</b><small>catecismo</small></div><div><b id="cateMedal">Primeiro Sábado</b><small>medalha</small></div></div><div class="bar"><div id="cateBar"></div></div><button id="continueCatechism">Continuar leitura deste sábado</button></div>
-<div id="certCard" class="card hidden"><h2>🎓 Certidão de Conclusão</h2><p class="muted">Parabéns! As 52 lições do Catecismo Menor de São Pio X foram concluídas. Digite o nome e gere a certidão em PDF — a data e o local serão preenchidos automaticamente (o navegador pode pedir permissão de localização; se você não permitir, apenas a data será usada).</p><input id="studentNameInput" placeholder="Nome completo do aluno"><div id="certStatus" class="details hidden"></div><button id="generateCertificate">🖨️ Gerar Certidão em PDF</button></div>
+<div id="certCard" class="card hidden"><h2>🎓 Certidão de Conclusão</h2><p class="muted">Parabéns! As 52 lições do Catecismo Menor de São Pio X foram concluídas. Digite o nome e gere a certidão em PDF — a data e o local serão preenchidos automaticamente (o navegador pode pedir permissão de localização; se você não permitir, apenas a data será usada).</p><input id="studentNameInput" placeholder="Nome completo do aluno"><input id="responsibleNameInput" placeholder="Nome do responsável (vira assinatura digital)"><div id="certStatus" class="details hidden"></div><button id="generateCertificate">🖨️ Gerar Certidão em PDF</button></div>
 <div class="card"><h2>🔎 Buscar no Catecismo</h2><input id="cateSearch" class="search" placeholder="Buscar: Credo, pecado, sacramentos..."><div id="cateSearchResults"></div></div>
 <div class="card"><h2>📖 Leitor Pedagógico</h2><div id="cateReader"></div></div>
 <div class="card"><h2>⭐ Favoritos</h2><div id="cateFavorites"></div></div>
@@ -347,4 +350,4 @@ traditioaguia@gmail.com
 <button data-tab="catechism">Catecismo</button>
 <button data-tab="more">Mais</button>
 </nav>
-</div><script src="app.js?v=35.3.2-assinatura"></script></body></html>
+</div><script src="app.js?v=35.3.3-assinaturas-real"></script></body></html>
