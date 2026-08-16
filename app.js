@@ -21,7 +21,8 @@ const icons={'Geometria':'📐','Matemática':'🧮','Inglês':'🇺🇸','Proje
 const curriculum={Geometria:['Ângulos','Polígonos','Área e perímetro','Pitágoras','Semelhança'],Matemática:['Porcentagem','Equações','Funções','Estatística','Geometria'],Português:['Interpretação textual','Produção textual'],Ciências:['Genética','Ecologia','Corpo humano'],História:['República','Guerras Mundiais'],Geografia:['Globalização','Geopolítica'],Inglês:['Reading','Vocabulário','Verbos'],Arte:['Artes visuais','Música'],Projeto:['Pesquisa','Apresentação oral']};
 const plans={1:['Segunda-feira','Gramática','gram',[['Português','Interpretação e gramática'],['Inglês','Vocabulário e reading'],['Latim','Oração do mês'],['Exercício','Quiz de gramática']]],2:['Terça-feira','Dialética','dial',[['Matemática','Porcentagem ou equações'],['Ciências','Genética ou ecologia'],['Educação Financeira','Problema prático']]],3:['Quarta-feira','Retórica','rhet',[['Projeto','Pesquisa'],['Português','Texto curto'],['Apresentação oral','Explicar ao responsável']]],4:['Quinta-feira','Quadrivium','quad',[['Geometria','Número no espaço'],['Geografia','Mapas'],['Arte','Forma e proporção']]],5:['Sexta-feira','Síntese','syn',[['Revisão geral','Matemática, Inglês e Projeto'],['Boss Battle','20 questões']]],6:['Sábado','Catecismo Anual','cat',[['Catecismo Anual','Leitura pedagógica'],['Perguntas','Responder em voz alta']]],0:['Domingo','Vida Cristã','cat',[['Missa','Participar'],['Revisão dominical','Relembrar leitura']]]};
 const journeyPages=[{emoji:'🦅',title:'Bem-vindo à Jornada:"Que este aplicativo seja um instrumento de Nossa Senhora para formar a todos com inteligência, virtude e fé."',text:'Uma plataforma de formação católica tradicional que reúne:\n•Catecismo Menor de São Pio X;\n•Reforço Escolar;\n• Educação Financeira;\n• Academia Inteligente;\n• Planejamento de estudos; (Baseado no Trivium e Quadrivium);\n• Acompanhamento do progresso.\nAqui você entende o caminho antes de começar.'},{emoji:'✝️',title:'Catecismo preservado',text:'A aba Catecismo Anual permanece no padrão aprovado.'},{emoji:'🏛️',title:'Academia inteligente',text:'Botões grandes por matéria, perguntas diferentes e prioridade automática.'},{emoji:'📊',title:'Boletim e responsável',text:'Notas, Academia e progresso ficam sincronizados com o responsável.'},{emoji:'🚀',title:'Começar',text:'Cognoscere, amare et servire Deum.'}];
-let state=JSON.parse(localStorage.getItem('aguiaV35')||'{"checked":{},"money":{},"xp":0,"cateDone":{},"catePage":0,"cateXP":0,"cateFavorites":[],"journeyIndex":0,"piggy":{"free":0,"saved":0,"charity":0},"aiPlan":"","seenQuestions":{},"grades":null,"academyStats":{},"lastOCR":"","selectedSubject":null}');
+let state=JSON.parse(localStorage.getItem('aguiaV35')||'{"checked":{},"money":{},"xp":0,"cateDone":{},"catePage":0,"cateXP":0,"cateFavorites":[],"journeyIndex":0,"piggy":{"free":0,"saved":0,"charity":0},"aiPlan":"","seenQuestions":{},"grades":null,"academyStats":{},"lastOCR":"","selectedSubject":null,"studentName":""}');
+if(typeof state.studentName!=='string')state.studentName='';
 state.grades = Object.assign({}, defaultGrades, state.grades || {});
 if(!state.academyStats) state.academyStats={};
 if(!state.academyHistory) state.academyHistory=[];
@@ -293,7 +294,7 @@ function describeDate(key){
  <b>Reforço por boletim:</b><br>Prioridade atual: ${pr}.${extra}`;
 }
 function renderCateReader(){let i=state.catePage||0,l=cateLessons[i],sats=saturdaysOfYear(),key=iso(sats[i]);let fav=state.cateFavorites.includes(i);cateReader.innerHTML=`<div class="reader"><h3>Lição ${i+1}: ${l.theme}</h3><small>Sábado: ${key} • bloco: ${l.range}</small><div class="reader-body">${l.html}</div><div class="reader-controls"><button id="prevCate" class="secondary">◀ Anterior</button><button id="nextCate">Próxima ▶</button><button id="favCate" class="secondary">${fav?'★ Remover favorito':'☆ Favoritar'}</button><button id="markCate">☑ Concluir leitura</button></div></div>`}
-function renderCatechism(){let done=cateDoneCount(),pct=Math.round(done/52*100);cateProgress.textContent=pct+'%';cateDone.textContent=done+'/52';cateXP.textContent=state.cateXP+' XP';cateBar.style.width=pct+'%';cateMedal.textContent=done>=52?'Águia da Fé':done>=25?'Discípulo de São Pio X':done>=10?'Pequeno Catequista':'Primeiro Sábado';renderCateReader();renderCateSearch();renderCateFavorites();let current=state.catePage||cateWeekIndex();cateSchedule.innerHTML=saturdaysOfYear().map((d,i)=>`<div class="cate-week ${state.cateDone[iso(d)]?'done':''} ${i===current?'current':''}"><b>Lição ${i+1} — ${iso(d)}</b><br><small>${cateLessons[i].theme}</small><br><button data-open-cate="${i}">Abrir lição</button></div>`).join('');parentCatechism.innerHTML=`<div class="details"><b>${done}/52 sábados</b><br><small>${pct}% concluído • ${state.cateXP} XP</small></div>`}
+function renderCatechism(){let done=cateDoneCount(),pct=Math.round(done/52*100);cateProgress.textContent=pct+'%';cateDone.textContent=done+'/52';cateXP.textContent=state.cateXP+' XP';cateBar.style.width=pct+'%';cateMedal.textContent=done>=52?'Águia da Fé':done>=25?'Discípulo de São Pio X':done>=10?'Pequeno Catequista':'Primeiro Sábado';if(certCard){certCard.classList.toggle('hidden',done<52);if(studentNameInput&&document.activeElement!==studentNameInput)studentNameInput.value=state.studentName||''}renderCateReader();renderCateSearch();renderCateFavorites();let current=state.catePage||cateWeekIndex();cateSchedule.innerHTML=saturdaysOfYear().map((d,i)=>`<div class="cate-week ${state.cateDone[iso(d)]?'done':''} ${i===current?'current':''}"><b>Lição ${i+1} — ${iso(d)}</b><br><small>${cateLessons[i].theme}</small><br><button data-open-cate="${i}">Abrir lição</button></div>`).join('');parentCatechism.innerHTML=`<div class="details"><b>${done}/52 sábados</b><br><small>${pct}% concluído • ${state.cateXP} XP</small></div>`}
 function renderCateSearch(){let q=(cateSearch.value||'').toLowerCase();if(!q){cateSearchResults.innerHTML='<p class="muted">Digite uma palavra para buscar.</p>';return}let results=cateLessons.map((l,i)=>({t:l.theme,html:l.html,i})).filter(x=>x.t.toLowerCase().includes(q)||x.html.toLowerCase().includes(q));cateSearchResults.innerHTML=results.slice(0,20).map(r=>`<div class="search-result"><b>Lição ${r.i+1}: ${r.t}</b><br><button data-open-cate="${r.i}">Abrir</button></div>`).join('')||'<p class="muted">Nenhum resultado.</p>'}
 function renderCateFavorites(){cateFavorites.innerHTML=state.cateFavorites.length?state.cateFavorites.map(i=>`<div class="favorite"><b>Lição ${i+1}: ${cateLessons[i].theme}</b><br><button data-open-cate="${i}">Abrir</button></div>`).join(''):'<p class="muted">Nenhum favorito ainda.</p>'}
 function studyPercent(sub){
@@ -565,6 +566,100 @@ async function extractTextFromPdf(file,onProgress){
  }
  return {text:ocrParts.join('\n\n').trim(),method:'ocr',numPages};
 }
+function heartsArtworkSVG(){
+ const W=640,H=440;
+ const gold='#b8860b',gold2='#d4af37',crimson='#a3123a',pink='#c23b5a',silver='#9aa0a6',white='#ffffff';
+ const heartPath="M0,-30 C-12,-62 -62,-60 -62,-18 C-62,14 -30,42 0,76 C30,42 62,14 62,-18 C62,-60 12,-62 0,-30 Z";
+ function rays(cx,cy,rInner,rOuter,count,color){let out='';for(let i=0;i<count;i++){let a=(Math.PI*2*i)/count;let len=i%2===0?rOuter:rOuter*0.7;let x1=cx+Math.cos(a)*rInner,y1=cy+Math.sin(a)*rInner;let x2=cx+Math.cos(a)*len,y2=cy+Math.sin(a)*len;out+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="2" stroke-linecap="round" opacity="0.75"/>`}return out}
+ function thorns(cx,cy,r,count,color){let out='';for(let i=0;i<count;i++){let a=(Math.PI*2*i)/count;let x1=cx+Math.cos(a)*(r-6),y1=cy+Math.sin(a)*(r-6);let x2=cx+Math.cos(a)*(r+7),y2=cy+Math.sin(a)*(r+7);out+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="2.2" stroke-linecap="round"/>`}return out+`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="3"/>`}
+ function rose(x,y,scale,color){let petals='';for(let i=0;i<5;i++){let a=(Math.PI*2*i)/5;let px=x+Math.cos(a)*3.2*scale,py=y+Math.sin(a)*3.2*scale;petals+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${(3.4*scale).toFixed(1)}" fill="${color}" stroke="#7a1f34" stroke-width="0.4"/>`}petals+=`<circle cx="${x}" cy="${y}" r="${(1.6*scale).toFixed(1)}" fill="#f4c542"/>`;return `<g>${petals}</g>`}
+ function wreathOfRoses(cx,cy,r,count,color){let out='';for(let i=0;i<count;i++){let a=Math.PI*0.15+(Math.PI*1.7*i)/(count-1);let x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;out+=rose(x,y,1,color)}return out}
+ let jesusCx=210,jesusCy=250;
+ let jesusHeart=`<g transform="translate(${jesusCx},${jesusCy})">${rays(0,0,70,140,16,gold2)}<circle cx="0" cy="-15" r="88" fill="none" stroke="${gold2}" stroke-width="1.4" opacity="0.55"/><path d="${heartPath}" fill="${crimson}" stroke="#6b0f26" stroke-width="3"/><path d="${heartPath}" fill="url(#jesusGrad)" opacity="0.55"/>${thorns(0,-28,46,14,'#5a3a1e')}<path d="M-6,-96 C-16,-84 -14,-70 0,-64 C14,-70 16,-84 6,-96 C4,-88 0,-84 0,-84 C0,-84 -4,-88 -6,-96 Z" fill="#e8a13a" stroke="#a4611b" stroke-width="1"/><path d="M0,-108 C-8,-98 -6,-86 0,-80 C6,-86 8,-98 0,-108 Z" fill="#f4c542" stroke="#a4611b" stroke-width="1"/><g stroke="${gold}" stroke-width="4" stroke-linecap="round"><line x1="0" y1="-118" x2="0" y2="-96"/><line x1="-9" y1="-110" x2="9" y2="-110"/></g></g>`;
+ let maryCx=430,maryCy=250;
+ let maryHeart=`<g transform="translate(${maryCx},${maryCy})">${rays(0,0,70,140,16,gold2)}<circle cx="0" cy="-15" r="88" fill="none" stroke="${gold2}" stroke-width="1.4" opacity="0.55"/><path d="${heartPath}" fill="${pink}" stroke="#6b1030" stroke-width="3"/><path d="${heartPath}" fill="url(#maryGrad)" opacity="0.55"/>${wreathOfRoses(0,-30,44,7,white)}<line x1="-46" y1="-92" x2="30" y2="60" stroke="${silver}" stroke-width="3" stroke-linecap="round"/><polygon points="-46,-92 -40,-100 -34,-92 -40,-84" fill="${silver}" stroke="#5b6066" stroke-width="1"/><line x1="-58" y1="-80" x2="-34" y2="-104" stroke="${silver}" stroke-width="4" stroke-linecap="round"/><circle cx="30" cy="60" r="3" fill="${silver}"/></g>`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><defs><radialGradient id="jesusGrad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#ff8fa3"/><stop offset="100%" stop-color="${crimson}" stop-opacity="0"/></radialGradient><radialGradient id="maryGrad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#ffd1de"/><stop offset="100%" stop-color="${pink}" stop-opacity="0"/></radialGradient><radialGradient id="bgGlow" cx="50%" cy="45%" r="65%"><stop offset="0%" stop-color="#fff6df"/><stop offset="100%" stop-color="#fff6df" stop-opacity="0"/></radialGradient></defs><rect x="0" y="0" width="${W}" height="${H}" fill="url(#bgGlow)"/>${jesusHeart}${maryHeart}</svg>`;
+}
+function svgToPngDataUrl(svgString,width,height){return new Promise((resolve,reject)=>{let blob=new Blob([svgString],{type:'image/svg+xml;charset=utf-8'});let url=URL.createObjectURL(blob);let img=new Image();img.onload=()=>{let canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;let ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,width,height);URL.revokeObjectURL(url);resolve(canvas.toDataURL('image/png'))};img.onerror=(e)=>{URL.revokeObjectURL(url);reject(e)};img.src=url})}
+function getLocationLabel(){
+ return new Promise(resolve=>{
+  if(!navigator.geolocation){resolve(null);return}
+  navigator.geolocation.getCurrentPosition(
+   async pos=>{
+    try{
+     let lat=pos.coords.latitude,lon=pos.coords.longitude;
+     let res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`,{headers:{'Accept':'application/json'}});
+     if(!res.ok){resolve(null);return}
+     let data=await res.json();
+     let addr=data.address||{};
+     let city=addr.city||addr.town||addr.village||addr.municipality||addr.county||'';
+     let state=addr.state||'';
+     if(city&&state)resolve(`${city}, ${state}`);
+     else if(city)resolve(city);
+     else resolve(null);
+    }catch(err){resolve(null)}
+   },
+   ()=>resolve(null),
+   {enableHighAccuracy:false,timeout:8000,maximumAge:600000}
+  );
+ });
+}
+async function generateCertificate(){
+ if(cateDoneCount()<52){alert('A certidão fica disponível após concluir as 52 lições do Catecismo Menor de São Pio X.');return}
+ let typedName=(typeof studentNameInput!=='undefined'&&studentNameInput)?studentNameInput.value.trim():'';
+ let name=typedName||(state.studentName||'').trim();
+ if(!name){
+  name=(prompt('Digite o nome completo do aluno para a certidão:','')||'').trim();
+  if(!name)return;
+ }
+ state.studentName=name;save();
+ if(typeof studentNameInput!=='undefined'&&studentNameInput)studentNameInput.value=name;
+ if(typeof certStatus!=='undefined'&&certStatus){certStatus.classList.remove('hidden');certStatus.textContent='📍 Obtendo local e data automaticamente...'}
+ let cityLabel=await getLocationLabel();
+ if(typeof certStatus!=='undefined'&&certStatus)certStatus.textContent='Gerando certidão em PDF...';
+ try{
+  let jspdfLib=await waitForGlobal('jspdf',15000);
+  let jsPDF=jspdfLib.jsPDF;
+  let artDataUrl=await svgToPngDataUrl(heartsArtworkSVG(),960,660);
+  let doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  let W=297,H=210;
+  doc.setFillColor(255,251,240);doc.rect(0,0,W,H,'F');
+  doc.setDrawColor(139,94,20);doc.setLineWidth(1.3);doc.rect(8,8,W-16,H-16);
+  doc.setLineWidth(0.5);doc.rect(11.5,11.5,W-23,H-23);
+  [[14,14],[W-14,14],[14,H-14],[W-14,H-14]].forEach(c=>{doc.setDrawColor(139,94,20);doc.setLineWidth(0.7);doc.line(c[0]-3,c[1],c[0]+3,c[1]);doc.line(c[0],c[1]-3,c[0],c[1]+3)});
+  doc.setFont('times','bolditalic');doc.setFontSize(11);doc.setTextColor(139,94,20);
+  doc.text('Traditio Águia',W/2,18,{align:'center'});
+  doc.setFont('times','bold');doc.setFontSize(27);doc.setTextColor(120,15,30);
+  doc.text('Certidão de Conclusão',W/2,31,{align:'center'});
+  doc.setFont('times','normal');doc.setFontSize(15);doc.setTextColor(90,60,10);
+  doc.text('Catecismo Menor de São Pio X',W/2,40,{align:'center'});
+  let imgW=64,imgH=imgW*660/960;
+  doc.addImage(artDataUrl,'PNG',(W-imgW)/2,45,imgW,imgH);
+  let bodyY=45+imgH+13;
+  doc.setFont('times','normal');doc.setFontSize(13);doc.setTextColor(45,32,20);
+  let body=`Certificamos que ${name}, mediante estudo dedicado e perseverança, concluiu integralmente o Catecismo Menor de São Pio X, percorrendo com fé as 52 lições dos sábados do ano, sob a proteção do Sagrado Coração de Jesus e do Imaculado Coração de Maria.`;
+  let lines=doc.splitTextToSize(body,W-80);
+  doc.text(lines,W/2,bodyY,{align:'center'});
+  doc.setFont('times','italic');doc.setFontSize(12);doc.setTextColor(120,15,30);
+  doc.text('«Cognoscere, amare et servire Deum»',W/2,bodyY+lines.length*6.3+9,{align:'center'});
+  let hoje=new Date();
+  let mesesNomes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  let dataStr=cityLabel?`${cityLabel}, ${hoje.getDate()} de ${mesesNomes[hoje.getMonth()]} de ${hoje.getFullYear()}`:`${hoje.getDate()} de ${mesesNomes[hoje.getMonth()]} de ${hoje.getFullYear()}`;
+  doc.setFont('times','normal');doc.setFontSize(11);doc.setTextColor(60,45,25);
+  doc.text(dataStr,W/2,H-28,{align:'center'});
+  doc.setDrawColor(70,50,25);doc.setLineWidth(0.3);
+  doc.line(38,H-19,118,H-19);
+  doc.setFontSize(10);
+  doc.text('Responsável',78,H-14,{align:'center'});
+  doc.line(W-118,H-19,W-38,H-19);
+  doc.text('Traditio Águia',W-78,H-14,{align:'center'});
+  let safeName=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase()||'aluno';
+  doc.save(`certidao-catecismo-${safeName}.pdf`);
+  if(typeof certStatus!=='undefined'&&certStatus)certStatus.textContent='✅ Certidão gerada! Verifique a pasta de downloads do seu navegador.';
+ }catch(err){
+  if(typeof certStatus!=='undefined'&&certStatus)certStatus.textContent='⚠️ Não foi possível gerar a certidão agora. Verifique sua conexão com a internet e tente novamente.';
+ }
+}
 let ocrPreviewUrl=null;
 async function runOCR(file){
  if(!file)return;
@@ -632,9 +727,9 @@ async function runOCR(file){
   ocrStatus.textContent='⚠️ Ocorreu um erro ao processar a imagem. Tente novamente com uma foto mais nítida, ou digite as notas manualmente na tabela abaixo.';
  }
 }
-document.addEventListener('change',e=>{if(e.target.matches('#tasks input')){state.checked[e.target.dataset.id]=e.target.checked;state.aiPlan='';save();renderAll()}if(e.target.matches('[data-grade-sub]')){let s=e.target.dataset.gradeSub,i=Number(e.target.dataset.gradeI);state.grades[s][i]=Number(e.target.value||0);save();renderGradesTable();}if(e.target.id==='disciplineSelect'){state.selectedSubject=e.target.value;state.academySession=null;save();renderAcademySession()}if(e.target.id==='reportFile'){let file=e.target.files[0];if(file)runOCR(file)}if(e.target.id==='importGrades'){let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{try{state.grades=JSON.parse(r.result);save();renderGradesTable();alert('Boletim importado.')}catch(e){alert('Arquivo inválido.')}};r.readAsText(file)}});
+document.addEventListener('change',e=>{if(e.target.matches('#tasks input')){state.checked[e.target.dataset.id]=e.target.checked;state.aiPlan='';save();renderAll()}if(e.target.matches('[data-grade-sub]')){let s=e.target.dataset.gradeSub,i=Number(e.target.dataset.gradeI);state.grades[s][i]=Number(e.target.value||0);save();renderGradesTable();}if(e.target.id==='disciplineSelect'){state.selectedSubject=e.target.value;state.academySession=null;save();renderAcademySession()}if(e.target.id==='reportFile'){let file=e.target.files[0];if(file)runOCR(file)}if(e.target.id==='studentNameInput'){state.studentName=e.target.value;save()}if(e.target.id==='importGrades'){let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{try{state.grades=JSON.parse(r.result);save();renderGradesTable();alert('Boletim importado.')}catch(e){alert('Arquivo inválido.')}};r.readAsText(file)}});
 document.addEventListener('input',e=>{if(e.target.id==='cateSearch')renderCateSearch()});
-document.addEventListener('click',e=>{if(e.target.matches('[data-tab]'))switchTab(e.target.dataset.tab);if(e.target.id==='goParent')switchTab('parent');if(e.target.id==='approve')approve();if(e.target.id==='parseGrades'){let found=parseGradesFromText(ocrText.value);let count=applyDetectedGrades(found);parseResult.innerHTML=count?`Notas detectadas e aplicadas: ${count}. Revise a tabela.`:'Nenhuma nota detectada automaticamente. Revise o texto ou preencha manualmente.'}if(e.target.id==='resetQuestionHistory'){state.seenQuestions={};state.academySession=null;save();alert('Histórico reiniciado.')}if(e.target.id==='startAcademySession'){startAcademySession();}if(e.target.id==='smartQuestion'){state.selectedSubject=smartPriority();state.academySession=null;save();renderAcademy();}if(e.target.matches('[data-annual]'))describeDate(e.target.dataset.annual);if(e.target.matches('[data-open-date-cate]')){let key=e.target.dataset.openDateCate;let idx=saturdaysOfYear().findIndex(d=>iso(d)===key);state.catePage=idx>=0?idx:cateWeekIndex(new Date(key+'T00:00:00'));save();switchTab('catechism')}if(e.target.matches('[data-open-cate]')){state.catePage=Number(e.target.dataset.openCate);state.aiPlan='';save();switchTab('catechism')}if(e.target.matches('[data-subject]'))showQuestion(e.target.dataset.subject);if(e.target.matches('.answer-session')){answerAcademySession(e.target.dataset.i);}if(e.target.matches('.answer')){let sub=e.target.dataset.sub,q=questionBank[sub][Number(e.target.dataset.qi)],ok=Number(e.target.dataset.i)===q[2];e.target.classList.add(ok?'correct':'wrong');state.xp+=ok?5:0;state.academyStats[sub]=state.academyStats[sub]||{correct:0,total:0};state.academyStats[sub].total++;if(ok)state.academyStats[sub].correct++;let fb=e.target.parentElement.querySelector('.feedback');fb.classList.remove('hidden');fb.textContent=ok?'✅ Correto! +5 XP':'❌ '+q[3];save();renderAcademyStats();}if(e.target.id==='continueCatechism'){state.catePage=cateWeekIndex();save();switchTab('catechism')}if(e.target.id==='prevCate'){state.catePage=Math.max(0,(state.catePage||0)-1);save();renderAll()}if(e.target.id==='nextCate'){state.catePage=Math.min(51,(state.catePage||0)+1);save();renderAll()}if(e.target.id==='favCate'){let i=state.catePage||0;state.cateFavorites=state.cateFavorites.includes(i)?state.cateFavorites.filter(x=>x!==i):[...state.cateFavorites,i];save();renderAll()}if(e.target.id==='markCate'){let i=state.catePage||0,key=iso(saturdaysOfYear()[i]);if(!state.cateDone[key]){state.cateDone[key]=true;state.cateXP+=10;state.xp+=10;save()}renderAll()}if(e.target.id==='journeyNext'){if(state.journeyIndex<journeyPages.length-1){state.journeyIndex++;save();renderJourney()}else switchTab('today')}if(e.target.id==='journeyPrev'){if(state.journeyIndex>0){state.journeyIndex--;save();renderJourney()}}if(e.target.id==='restartJourney'){state.journeyIndex=0;save();renderJourney()}if(e.target.id==='saveGrades'){save();alert('Notas salvas e sincronizadas com o responsável.')}if(e.target.id==='exportGrades'){let blob=new Blob([JSON.stringify(state.grades,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='boletim-projeto-aguia.json';a.click()}if(e.target.id==='export'){let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='projeto-aguia-v35-2-4-progresso.json';a.click()}if(e.target.id==='logout'){localStorage.removeItem('unlockedV23');location.reload()}});
+document.addEventListener('click',e=>{if(e.target.matches('[data-tab]'))switchTab(e.target.dataset.tab);if(e.target.id==='goParent')switchTab('parent');if(e.target.id==='approve')approve();if(e.target.id==='parseGrades'){let found=parseGradesFromText(ocrText.value);let count=applyDetectedGrades(found);parseResult.innerHTML=count?`Notas detectadas e aplicadas: ${count}. Revise a tabela.`:'Nenhuma nota detectada automaticamente. Revise o texto ou preencha manualmente.'}if(e.target.id==='resetQuestionHistory'){state.seenQuestions={};state.academySession=null;save();alert('Histórico reiniciado.')}if(e.target.id==='startAcademySession'){startAcademySession();}if(e.target.id==='generateCertificate'){generateCertificate();}if(e.target.id==='smartQuestion'){state.selectedSubject=smartPriority();state.academySession=null;save();renderAcademy();}if(e.target.matches('[data-annual]'))describeDate(e.target.dataset.annual);if(e.target.matches('[data-open-date-cate]')){let key=e.target.dataset.openDateCate;let idx=saturdaysOfYear().findIndex(d=>iso(d)===key);state.catePage=idx>=0?idx:cateWeekIndex(new Date(key+'T00:00:00'));save();switchTab('catechism')}if(e.target.matches('[data-open-cate]')){state.catePage=Number(e.target.dataset.openCate);state.aiPlan='';save();switchTab('catechism')}if(e.target.matches('[data-subject]'))showQuestion(e.target.dataset.subject);if(e.target.matches('.answer-session')){answerAcademySession(e.target.dataset.i);}if(e.target.matches('.answer')){let sub=e.target.dataset.sub,q=questionBank[sub][Number(e.target.dataset.qi)],ok=Number(e.target.dataset.i)===q[2];e.target.classList.add(ok?'correct':'wrong');state.xp+=ok?5:0;state.academyStats[sub]=state.academyStats[sub]||{correct:0,total:0};state.academyStats[sub].total++;if(ok)state.academyStats[sub].correct++;let fb=e.target.parentElement.querySelector('.feedback');fb.classList.remove('hidden');fb.textContent=ok?'✅ Correto! +5 XP':'❌ '+q[3];save();renderAcademyStats();}if(e.target.id==='continueCatechism'){state.catePage=cateWeekIndex();save();switchTab('catechism')}if(e.target.id==='prevCate'){state.catePage=Math.max(0,(state.catePage||0)-1);save();renderAll()}if(e.target.id==='nextCate'){state.catePage=Math.min(51,(state.catePage||0)+1);save();renderAll()}if(e.target.id==='favCate'){let i=state.catePage||0;state.cateFavorites=state.cateFavorites.includes(i)?state.cateFavorites.filter(x=>x!==i):[...state.cateFavorites,i];save();renderAll()}if(e.target.id==='markCate'){let i=state.catePage||0,key=iso(saturdaysOfYear()[i]);if(!state.cateDone[key]){state.cateDone[key]=true;state.cateXP+=10;state.xp+=10;save()}renderAll()}if(e.target.id==='journeyNext'){if(state.journeyIndex<journeyPages.length-1){state.journeyIndex++;save();renderJourney()}else switchTab('today')}if(e.target.id==='journeyPrev'){if(state.journeyIndex>0){state.journeyIndex--;save();renderJourney()}}if(e.target.id==='restartJourney'){state.journeyIndex=0;save();renderJourney()}if(e.target.id==='saveGrades'){save();alert('Notas salvas e sincronizadas com o responsável.')}if(e.target.id==='exportGrades'){let blob=new Blob([JSON.stringify(state.grades,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='boletim-projeto-aguia.json';a.click()}if(e.target.id==='export'){let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='projeto-aguia-v35-2-4-progresso.json';a.click()}if(e.target.id==='logout'){localStorage.removeItem('unlockedV23');location.reload()}});
 /* Service Worker desativado na V35.2.5 para evitar cache quebrado. */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
 renderAll();
